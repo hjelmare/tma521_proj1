@@ -20,7 +20,7 @@ for i = 1 : k;
     
     %Creates the matrix x_{ijl}
     %--------------------------------
-    for j = 0:length(nl(first:last))-1
+    for j = 0:length(nl(first:last))-2
         from = nl(first+j);
         to = nl(first+j+1);
         x(from, to, i) = 1;
