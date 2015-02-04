@@ -110,22 +110,9 @@ visagrid(dimX,dimY,nl,com,pi,shift)
 
 %% Heuristic
 
-routeIndices = zeros(k,2);
-last = 0;
-for i = 1 : k;
-    first = last+1;
-    slask = find(nl(last+1:length(nl)) == com(i,1));
-    last = slask(1)+first-1;
-    routeCost(i) =  sum(pi(nl(first:last)));
-    routeIndices(i,:) = [first, last];
-end
+collidingRoutes = FindCollidingRoutes(nl,pi,com)
 
-node = 1;
-while ( length(find(nl == node))<=1 ) && (node <= n)
-    node = node+1;
-end
 
-i = 1;
 
 
 % 
