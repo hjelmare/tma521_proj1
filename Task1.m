@@ -110,31 +110,43 @@ visagrid(dimX,dimY,nl,com,pi,shift)
 
 %% Heuristic
 
+routeIndices = zeros(k,2);
 last = 0;
 for i = 1 : k;
     first = last+1;
     slask = find(nl(last+1:length(nl)) == com(i,1));
     last = slask(1)+first-1;
     routeCost(i) =  sum(pi(nl(first:last)));
+    routeIndices(i,:) = [first, last];
 end
 
-k = 1;
-i = 1;
-j = 1;
-while i <= n
-    j = 1;
-    while j <= n
-        if sum(x(i,j,:)) > 1
-            disp('asdfhflksdjahflkasjdhflkasjdhflhasd')
-            i = 2*n;
-            j = 2*n;
-        end
-        disp ([i,j])
-        j = j + 1;
-    end
-    disp ([i,j])
-    i = i + 1;
+node = 1;
+while ( length(find(nl == node))<=1 ) && (node <= n)
+    node = node+1;
 end
 
+
+
+% 
+% k = 1;
+% i = 1;
+% j = 1;
+% while i <= n
+%     j = 1;
+%     while j <= n
+%         if sum(x(i,j,:)) > 1
+%             disp('asdfhflksdjahflkasjdhflkasjdhflhasd')
+%             collidingRoutes = find(x(i,j,:) == 1);
+%             collidingPoints = 
+%             i = 2*n;
+%             j = 2*n;
+%         end
+%         disp ([i,j])
+%         j = j + 1;
+%     end
+%     disp ([i,j])
+%     i = i + 1;
+% end
+% 
 
 
