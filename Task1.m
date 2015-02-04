@@ -125,7 +125,7 @@ while ( length(find(nl == node))<=1 ) && (node <= n)
     node = node+1;
 end
 
-i = 1; % test
+i = 1;
 
 
 % 
