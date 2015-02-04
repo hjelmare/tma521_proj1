@@ -104,6 +104,7 @@ disp(['in the end the dualfunction value is ' num2str(H(end)) ' and the number o
 
 %% Testing the program. Plotting and such
 shift = 25;
+figure
 visagrid(dimX,dimY,nl,com,pi,shift)
 
 
