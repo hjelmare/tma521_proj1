@@ -1,4 +1,4 @@
-function [ collidingRoutes ] = FindCollidingRoutes( nl, pi, com )
+function [ collidingRoutes, routeCost, collidingNode ] = FindCollidingRoutes( nl, pi, com )
 %FINDCOLLIDINGROUTES Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -24,7 +24,8 @@ end
 
 collidingIndices = find(nl == nl(i));
 collidingRoutes = routeIndices(collidingIndices);
-
+routeCost = routeCost(collidingRoutes);
+collidingNode = nl(i);
 
 end
 

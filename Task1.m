@@ -110,7 +110,15 @@ visagrid(dimX,dimY,nl,com,pi,shift)
 
 %% Heuristic
 
-collidingRoutes = FindCollidingRoutes(nl,pi,com)
+% hitta alla kollisioner
+% kolla vilka rutter som är inblandade
+% hitta den dyraste av dom (men kolla start/slut)
+% ta bort den ur nl
+% sätt alla noder som är kvar i nl till dyra
+% hitta en ny rutt enligt com[borttagen rutt]
+% infoga den och börja om.
+
+[collidingRoutes, routeCost, collidingNode] = FindCollidingRoutes(nl,pi,com)
 
 
 
