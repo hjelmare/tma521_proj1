@@ -110,9 +110,30 @@ visagrid(dimX,dimY,nl,com,pi,shift)
 
 %% Heuristic
 
+collisionNodes = [];
+
 % hitta alla kollisioner
-% kolla vilka rutter som är inblandade
-% hitta den dyraste av dom (men kolla start/slut)
+for i = 1:length(nl)
+    if length(find(nl == nl(i))) > 1
+        if ~ismember(nl(i),collisionNodes)
+            collisionNodes = [collisionNodes ; nl(i)];
+        end
+    end
+end
+    
+% hitta dyraste kolliderande rutten
+last = 0;
+for i = 1 : k;
+    first = last+1;
+    slask = find(nl(last+1:length(nl)) == com(i,1));
+    last = slask(1)+first-1;
+    routeCost(i) =  sum(pi(nl(first:last)));
+end
+
+[sortedCosts, sorting] = sort(routeCost);
+
+% här ska man skriva saker :)
+
 % ta bort den ur nl
 % sätt alla noder som är kvar i nl till dyra
 % hitta en ny rutt enligt com[borttagen rutt]
