@@ -110,9 +110,13 @@ visagrid(dimX,dimY,nl,com,pi,shift)
 
 %% Heuristic
 
-collisionNodes = [];
+reallyHighCost = 1e6;
+
+piTemp = pi;
+piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
 
 % hitta alla kollisioner
+collisionNodes = [];
 for i = 1:length(nl)
     if length(find(nl == nl(i))) > 1
         if ~ismember(nl(i),collisionNodes)
@@ -121,16 +125,57 @@ for i = 1:length(nl)
     end
 end
     
-% hitta dyraste kolliderande rutten
+% förbered rutternas kostnader och så...
 last = 0;
 for i = 1 : k;
     first = last+1;
     slask = find(nl(last+1:length(nl)) == com(i,1));
     last = slask(1)+first-1;
     routeCost(i) =  sum(pi(nl(first:last)));
+    routeIndices(first:last,1) = i;
 end
 
-[sortedCosts, sorting] = sort(routeCost);
+[sortedCosts, sortedRoutes] = sort(routeCost,'descend');
+
+% klura ut vilken rutt vi ska ändra på
+collidingRoutes = routeIndices( ismember(nl, collisionNodes) );
+collidingRoutes = unique( collidingRoutes );
+
+i = 1;
+while ~ismember(sortedRoutes(i),collidingRoutes)
+    i = i + 1;
+end
+changeRoute = sortedRoutes(i);
+
+% här borde man kika på start/slut-nodsproblemet
+
+nl(find(routeIndices == changeRoute)) = [];
+
+piTemp(nl) = reallyHighCost;
+
+newRoute = gsp(dimX, dimY, piTemp, 1, com(changeRoute,:) );
+
+nl = [nl ; newRoute];
+
+
+
+shift = 25;
+figure
+visagrid(dimX,dimY,nl,com,piTemp,shift)
+
+
+
+% startEndConflict = com(ismember(com, collisionNodes));
+% 
+% 
+% while(length(startEndConflict) > 0)
+%     conflictingPairs = FindPairsUsingNode(nl, startEndConflict(1), com);
+%     startEndConflict(1) = [];
+%     
+%     while(length(conflictPairs) > 1 )
+%         
+%     end
+% end
 
 % här ska man skriva saker :)
 
@@ -139,31 +184,5 @@ end
 % hitta en ny rutt enligt com[borttagen rutt]
 % infoga den och börja om.
 
-[collidingRoutes, routeCost, collidingNode] = FindCollidingRoutes(nl,pi,com)
-
-
-
-
-% 
-% k = 1;
-% i = 1;
-% j = 1;
-% while i <= n
-%     j = 1;
-%     while j <= n
-%         if sum(x(i,j,:)) > 1
-%             disp('asdfhflksdjahflkasjdhflkasjdhflhasd')
-%             collidingRoutes = find(x(i,j,:) == 1);
-%             collidingPoints = 
-%             i = 2*n;
-%             j = 2*n;
-%         end
-%         disp ([i,j])
-%         j = j + 1;
-%     end
-%     disp ([i,j])
-%     i = i + 1;
-% end
-% 
 
 
