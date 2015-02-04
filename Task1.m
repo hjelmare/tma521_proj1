@@ -131,9 +131,11 @@ for i = 1 : k;
     first = last+1;
     slask = find(nl(last+1:length(nl)) == com(i,1));
     last = slask(1)+first-1;
-    routeCost(i) =  sum(pi(nl(first:last)));
+    routeCost(i) =  sum(pi(nl(first:last))) + reallyHighCost * sum(ismember(nl(first:last),com));
     routeIndices(first:last,1) = i;
 end
+
+
 
 [sortedCosts, sortedRoutes] = sort(routeCost,'descend');
 
@@ -155,9 +157,11 @@ piTemp(nl) = reallyHighCost;
 
 newRoute = gsp(dimX, dimY, piTemp, 1, com(changeRoute,:) );
 
-nl = [nl ; newRoute];
+%nl = [nl ; newRoute];
 
+% klipp in manuellt
 
+%%
 
 shift = 25;
 figure

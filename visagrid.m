@@ -25,6 +25,7 @@ function visagrid(dimx,dimy,nodelist,com,pi,shift)
     axis([0 (dimx+1)*100 0 (dimy+1)*100]);
     
     last = 0;
+    colors = jet(length(com));      % this is ours
     for dacom = 1 : size(com,1);
         first = last+1;
         slask = find(nodelist(last+1:length(nodelist)) == com(dacom,1));
@@ -49,7 +50,7 @@ function visagrid(dimx,dimy,nodelist,com,pi,shift)
                 c2=c2+[shift shift];   
                 c2=c2+[(dacom-1)*1 (dacom-1)*1];    
             end    
-            plot([c1(1) c2(1)],[c1(2) c2(2)]);            
+            plot([c1(1) c2(1)],[c1(2) c2(2)],'color',colors(dacom,:));       % and a little bit of this as well
         end
         
     end
