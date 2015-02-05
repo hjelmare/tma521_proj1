@@ -107,7 +107,6 @@ shift = 25;
 figure
 visagrid(dimX,dimY,nl,com,pi,shift)
 
-
 %% Heuristic
 
 reallyHighCost = 1e6;
