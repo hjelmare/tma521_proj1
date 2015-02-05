@@ -107,4 +107,12 @@ shift = 25;
 figure
 visagrid(dimX,dimY,nl,com,pi,shift)
 
+%% test constraint 1c:
+%Detta gör inte sitt jobb rätt
+for i =1:n
+    for j=1:k
+        totalt(i) = sum(x(:,i,j));
+    end
+end
+
 
