@@ -123,6 +123,20 @@ reallyHighCost = 1e6;
 piTemp = pi;
 piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
 
+% förbered rutternas kostnader med straff för korsning av start och slut
+% noder.
+routeCost = zeros(k, 1);
+shift = 25;
+last = 0;
+for i = 1 : k;
+    first = last+1;
+    slask = find(nl(last+1:length(nl)) == com(i,1));
+    last = slask(1)+first-1;
+    routeCost(i) =  sum(piTemp(nl(first:last)));
+    routeIndices(first:last,1) = i;
+end
+
+%%
 % hitta alla kollisioner
 collisionNodes = [];
 for i = 1:length(nl)
@@ -132,69 +146,126 @@ for i = 1:length(nl)
         end
     end
 end
+
+collisionNodes(ismember(collisionNodes, com)) = [];
+for i = 1:length(collisionNodes)
+    collidingPairs = routeIndices(find(nl == collisionNodes(i)));
+    mostExpensiveIndex = sort(routeCost(collidingPairs), 'descend');
+    mostExpensiveIndex = find(routeCost == mostExpensiveIndex(1));
+    routeCost(mostExpensiveIndex) = routeCost(mostExpensiveIndex) + reallyHighCost;
+end
+
+
+pairsToChange = find(routeCost > 3*reallyHighCost);
+
+iIteration =1;
+quitCriteria = 50;
+while ~isempty(pairsToChange)
+        
+    [sortedCosts, sortedRoutes] = sort(routeCost(pairsToChange),'descend');
+    routeCost
+    pairsToChange
+    sortedRoutes
     
-% förbered rutternas kostnader och så...
-last = 0;
-for i = 1 : k;
-    first = last+1;
-    slask = find(nl(last+1:length(nl)) == com(i,1));
-    last = slask(1)+first-1;
-    routeCost(i) =  sum(pi(nl(first:last))) + reallyHighCost * sum(ismember(nl(first:last),com));
-    routeIndices(first:last,1) = i;
+    % klura ut vilken rutt vi ska ändra på
+    collidingRoutes = routeIndices( ismember(nl, collisionNodes) );
+    collidingRoutes = unique( collidingRoutes );
+    
+    changeRoute = pairsToChange(sortedRoutes(1));
+    
+    % här borde man kika på start/slut-nodsproblemet
+    insertionIndex = find(routeIndices == changeRoute);
+    nl(insertionIndex) = [];
+    
+    piTemp(nl) = reallyHighCost;
+    
+    newRoute = gsp(dimX, dimY, piTemp, 1, com(changeRoute,:) );
+    nl = [nl(1:insertionIndex(1)-1); newRoute; nl(insertionIndex(1):end)];
+    
+    visagrid(dimX,dimY,nl,com,piTemp,shift)
+    drawnow
+    pause(0.2)
+
+%----------------------Calculating cost-----------------------------
+    % beräknar rutternas kostnader och så...    
+    piTemp = pi;
+    piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
+    last = 0;
+    routeIndices=zeros(length(nl),1);
+    oldRouteCost = routeCost;
+    for i = 1 : k;
+        first = last+1;
+        slask = find(nl(last+1:length(nl)) == com(i,1));
+        last = slask(1)+first-1;
+        routeCost(i) =  sum(piTemp(nl(first:last)));
+        routeIndices(first:last,1) = i;
+    end
+    
+    % hitta alla kollisioner
+    collisionNodes = [];
+    for i = 1:length(nl)
+        if length(find(nl == nl(i))) > 1
+            if ~ismember(nl(i),collisionNodes)
+                collisionNodes = [collisionNodes ; nl(i)];
+            end
+        end
+    end
+    
+    collisionNodes(ismember(collisionNodes, com)) = [];
+    for i = 1:length(collisionNodes)
+        collidingPairs = routeIndices(find(nl == collisionNodes(i)));
+        if oldRouteCost == routeCost
+            mostExpensiveIndex = sort(routeCost(collidingPairs));
+        else
+            mostExpensiveIndex = sort(routeCost(collidingPairs),'descend');
+        end
+        mostExpensiveIndex = find(routeCost == mostExpensiveIndex(1));
+        routeCost(mostExpensiveIndex) = routeCost(mostExpensiveIndex) + reallyHighCost;
+    end
+ %--------------------------------------------------------------
+    
+    pairsToChange = pairsToChange(2:end); % tar bort den rutten som vi nyss ändrat
+    
+    if isempty(pairsToChange)
+       pairsToChange = find(routeCost > 3*reallyHighCost);
+    end
+    
+    if(iIteration == quitCriteria)
+        disp(['den hann inte reda ut allt, vi avbröt while-loopen. \n quitCriteria = ' num2str(quitCriteria) ])
+        pairsToChange = [];
+    end
+    iIteration = iIteration + 1;
 end
-
-
-
-[sortedCosts, sortedRoutes] = sort(routeCost,'descend');
-
-% klura ut vilken rutt vi ska ändra på
-collidingRoutes = routeIndices( ismember(nl, collisionNodes) );
-collidingRoutes = unique( collidingRoutes );
-
-i = 1;
-while ~ismember(sortedRoutes(i),collidingRoutes)
-    i = i + 1;
+%% EJ KLAR - STÄMMER LOOPEN?
+while isempty(collisionNodes) %Takes away pairs that can't make a feasible path.
+    collisionNodes = [];
+    for i = 1:length(nl)
+        if length(find(nl == nl(i))) > 1
+            if ~ismember(nl(i),collisionNodes)
+                collisionNodes = [collisionNodes ; nl(i)];
+            end
+        end
+    end
+    
+    for i = 1:length(collisionNodes)
+        collidingPairs = [collidingPairs; routeIndices(find(nl == collisionNodes(i)))];
+    end
+    
+    nbrOfCollisions = zeros(1,k);
+    for i = 1:k
+        nbrOfCollisions(i) = length(find(collidingPairs == i));
+    end
+    
+    if sum(nbrOfCollisions == max(nbrOfCollisions)) > 1
+        [~, pairToTakeAway] = max(nbrOfCollisions);
+        mostExpensiveIndex = sort(routeCost(collidingPairs), 'descend');
+        mostExpensiveIndex = find(routeCost == mostExpensiveIndex(1));
+        nl(routeIndices == pairToTakeAway) = [];
+        
+    else
+        [~, pairToTakeAway] = max(nbrOfCollisions);
+        nl(routeIndices == pairToTakeAway) = [];
+    end
+    
 end
-changeRoute = sortedRoutes(i);
-
-% här borde man kika på start/slut-nodsproblemet
-
-nl(find(routeIndices == changeRoute)) = [];
-
-piTemp(nl) = reallyHighCost;
-
-newRoute = gsp(dimX, dimY, piTemp, 1, com(changeRoute,:) );
-
-%nl = [nl ; newRoute];
-
-% klipp in manuellt
-
-%%
-
-shift = 25;
-figure
-visagrid(dimX,dimY,nl,com,piTemp,shift)
-
-
-
-% startEndConflict = com(ismember(com, collisionNodes));
-% 
-% 
-% while(length(startEndConflict) > 0)
-%     conflictingPairs = FindPairsUsingNode(nl, startEndConflict(1), com);
-%     startEndConflict(1) = [];
-%     
-%     while(length(conflictPairs) > 1 )
-%         
-%     end
-% end
-
-% här ska man skriva saker :)
-
-% ta bort den ur nl
-% sätt alla noder som är kvar i nl till dyra
-% hitta en ny rutt enligt com[borttagen rutt]
-% infoga den och börja om.
-
-
 
