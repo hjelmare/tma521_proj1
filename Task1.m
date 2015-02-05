@@ -118,16 +118,9 @@ piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
 
 % förbered rutternas kostnader med straff för korsning av start och slut
 % noder.
-routeCost = zeros(k, 1);
 shift = 25;
-last = 0;
-for i = 1 : k;
-    first = last+1;
-    slask = find(nl(last+1:length(nl)) == com(i,1));
-    last = slask(1)+first-1;
-    routeCost(i) =  sum(piTemp(nl(first:last)));
-    routeIndices(first:last,1) = i;
-end
+
+[routeIndices, routeCost] = UpdateRouteInfo(k, nl, com, piTemp);
 
 % hitta alla kollisioner
 collisionNodes = FindCollisionNodes(nl);
@@ -237,17 +230,19 @@ while ~isempty(collisionNodes) %Takes away pairs that can't make a feasible path
         mostExpensiveIndex = find(routeCost == mostExpensiveIndex(1));
         nl(routeIndices == pairToTakeAway) = [];
         com(pairToTakeAway,:) = [];
+        routeIndices(routeIndices == pairToTakeAway) = [];
         
     else
         [~, pairToTakeAway] = max(nbrOfCollisions);
         nl(routeIndices == pairToTakeAway) = [];
         com(pairToTakeAway,:) = [];
+        routeIndices(routeIndices == pairToTakeAway) = [];
     end
     k = k - 1;
     
     visagrid(dimX,dimY,nl,com,piTemp,shift)
     drawnow
-    pause(1.5)
+    pause(0.5)
 
     collisionNodes = FindCollisionNodes(nl);
 end
