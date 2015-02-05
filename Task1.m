@@ -66,7 +66,7 @@ n = dimX*dimY*2;    %number of nodes
 H = zeros(1,n);
 lambda = 1.99999999;
 lambdaFactor = 0.95;
-startPi = 0.1; %CHANGE THIS TO 1/n LATER!!!!!!!!!!!!
+startPi = 1/n;
 
 
 pi=zeros(n, 1);
@@ -100,7 +100,7 @@ end
 plot(H)
 figure
 plot(okNbrOfPaths)
-disp(['in the end the dualfunction value is ' num2str(H(end)) ' and then nuber of accepted paths were ' num2str(okNbrOfPaths(end)) ' of ' num2str(k) ' wanted'])
+disp(['in the end the dualfunction value is ' num2str(H(end)) ' and the number of accepted paths were ' num2str(okNbrOfPaths(end)) ' of ' num2str(k) ' wanted'])
 
 %% Testing the program. Plotting and such
 shift = 25;
@@ -114,5 +114,87 @@ for i =1:n
         totalt(i) = sum(x(:,i,j));
     end
 end
+
+
+%% Heuristic
+
+reallyHighCost = 1e6;
+
+piTemp = pi;
+piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
+
+% hitta alla kollisioner
+collisionNodes = [];
+for i = 1:length(nl)
+    if length(find(nl == nl(i))) > 1
+        if ~ismember(nl(i),collisionNodes)
+            collisionNodes = [collisionNodes ; nl(i)];
+        end
+    end
+end
+    
+% förbered rutternas kostnader och så...
+last = 0;
+for i = 1 : k;
+    first = last+1;
+    slask = find(nl(last+1:length(nl)) == com(i,1));
+    last = slask(1)+first-1;
+    routeCost(i) =  sum(pi(nl(first:last))) + reallyHighCost * sum(ismember(nl(first:last),com));
+    routeIndices(first:last,1) = i;
+end
+
+
+
+[sortedCosts, sortedRoutes] = sort(routeCost,'descend');
+
+% klura ut vilken rutt vi ska ändra på
+collidingRoutes = routeIndices( ismember(nl, collisionNodes) );
+collidingRoutes = unique( collidingRoutes );
+
+i = 1;
+while ~ismember(sortedRoutes(i),collidingRoutes)
+    i = i + 1;
+end
+changeRoute = sortedRoutes(i);
+
+% här borde man kika på start/slut-nodsproblemet
+
+nl(find(routeIndices == changeRoute)) = [];
+
+piTemp(nl) = reallyHighCost;
+
+newRoute = gsp(dimX, dimY, piTemp, 1, com(changeRoute,:) );
+
+%nl = [nl ; newRoute];
+
+% klipp in manuellt
+
+%%
+
+shift = 25;
+figure
+visagrid(dimX,dimY,nl,com,piTemp,shift)
+
+
+
+% startEndConflict = com(ismember(com, collisionNodes));
+% 
+% 
+% while(length(startEndConflict) > 0)
+%     conflictingPairs = FindPairsUsingNode(nl, startEndConflict(1), com);
+%     startEndConflict(1) = [];
+%     
+%     while(length(conflictPairs) > 1 )
+%         
+%     end
+% end
+
+% här ska man skriva saker :)
+
+% ta bort den ur nl
+% sätt alla noder som är kvar i nl till dyra
+% hitta en ny rutt enligt com[borttagen rutt]
+% infoga den och börja om.
+
 
 
