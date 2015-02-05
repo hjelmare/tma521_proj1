@@ -129,14 +129,7 @@ for i = 1 : k;
 end
 
 % hitta alla kollisioner
-collisionNodes = [];
-for i = 1:length(nl)
-    if length(find(nl == nl(i))) > 1
-        if ~ismember(nl(i),collisionNodes)
-            collisionNodes = [collisionNodes ; nl(i)];
-        end
-    end
-end
+collisionNodes = findCollisionNodes(nl);
 
 collisionNodes(ismember(collisionNodes, com)) = [];
 for i = 1:length(collisionNodes)
@@ -193,14 +186,7 @@ while ~isempty(pairsToChange)
     end
     
     % hitta alla kollisioner
-    collisionNodes = [];
-    for i = 1:length(nl)
-        if length(find(nl == nl(i))) > 1
-            if ~ismember(nl(i),collisionNodes)
-                collisionNodes = [collisionNodes ; nl(i)];
-            end
-        end
-    end
+    collisionNodes = findCollisionNodes(nl);
     
     collisionNodes(ismember(collisionNodes, com)) = [];
     for i = 1:length(collisionNodes)
@@ -229,25 +215,11 @@ while ~isempty(pairsToChange)
 end
 %% EJ KLAR - STÄMMER LOOPEN?
    
-collisionNodes = [];
-    for i = 1:length(nl)
-        if length(find(nl == nl(i))) > 1
-            if ~ismember(nl(i),collisionNodes)
-                collisionNodes = [collisionNodes ; nl(i)];
-            end
-        end
-    end
-    
+collisionNodes = findCollisionNodes(nl);
 
 while ~isempty(collisionNodes) %Takes away pairs that can't make a feasible path.
-    collisionNodes = [];
-    for i = 1:length(nl)
-        if length(find(nl == nl(i))) > 1
-            if ~ismember(nl(i),collisionNodes)
-                collisionNodes = [collisionNodes ; nl(i)];
-            end
-        end
-    end
+    
+    collisionNodes = findCollisionNodes(nl);
     
     for i = 1:length(collisionNodes)
         collidingPairs = [collidingPairs; routeIndices(find(nl == collisionNodes(i)))];
@@ -276,14 +248,6 @@ while ~isempty(collisionNodes) %Takes away pairs that can't make a feasible path
     drawnow
     pause(1.5)
 
-    
-    collisionNodes = [];
-    for i = 1:length(nl)
-        if length(find(nl == nl(i))) > 1
-            if ~ismember(nl(i),collisionNodes)
-                collisionNodes = [collisionNodes ; nl(i)];
-            end
-        end
-    end
+    collisionNodes = findCollisionNodes(nl);
 end
 
