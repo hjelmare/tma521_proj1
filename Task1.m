@@ -7,37 +7,37 @@ addpath(pwd);
 
 %initialization
 %-------p6.m----------------------------------
-% dimX=8;
-% dimY=6;
-% k=7;
-% com = [1 45; 
-%        2 43; 
-%        3 44; 
-%        4 42; 
-%        5 46; 
-%        6 47; 
-%        7 48];
+dimX=8;
+dimY=6;
+k=7;
+com = [1 45; 
+       2 43; 
+       3 44; 
+       4 42; 
+       5 46; 
+       6 47; 
+       7 48];
 %--------------------------------------------
 
 %------p10.m-------------------------------
-dimX=30;
-dimY=10;
-k=15;
-com = [24   271; 
-        8   282; 
-       21   295; 
-       25   290; 
-       15   291; 
-       27   279; 
-       30   293; 
-       26   289;  
-        2   297;
-       29   284; 
-       22   276; 
-       16   288; 
-       19   273; 
-       10   275;  
-        7   286];
+% dimX=30;
+% dimY=10;
+% k=15;
+% com = [24   271; 
+%         8   282; 
+%        21   295; 
+%        25   290; 
+%        15   291; 
+%        27   279; 
+%        30   293; 
+%        26   289;  
+%         2   297;
+%        29   284; 
+%        22   276; 
+%        16   288; 
+%        19   273; 
+%        10   275;  
+%         7   286];
 %----------------------------------------
 
 %-----------p11.m-----------------------
@@ -75,7 +75,7 @@ for i=1:n
 end
 
 % constants we might want to change
-maxIteration = 1200;
+maxIteration = 400;
 for nIteration = 1:maxIteration
    [nl, okcom, x] = LagrangianSubProblem(dimX, dimY, com, k, pi);    %x is the vector that describes the paths, okcom is the paths that were accepted
    
@@ -107,14 +107,6 @@ shift = 25;
 figure
 visagrid(dimX,dimY,nl,com,pi,shift)
 
-%% test constraint 1c:
-%Detta gör inte sitt jobb rätt
-for i =1:n
-    for j=1:k
-        totalt(i) = sum(x(:,i,j));
-    end
-end
-
 
 %% Heuristic
 
@@ -136,7 +128,6 @@ for i = 1 : k;
     routeIndices(first:last,1) = i;
 end
 
-%%
 % hitta alla kollisioner
 collisionNodes = [];
 for i = 1:length(nl)
@@ -237,7 +228,18 @@ while ~isempty(pairsToChange)
     iIteration = iIteration + 1;
 end
 %% EJ KLAR - STÄMMER LOOPEN?
-while isempty(collisionNodes) %Takes away pairs that can't make a feasible path.
+   
+collisionNodes = [];
+    for i = 1:length(nl)
+        if length(find(nl == nl(i))) > 1
+            if ~ismember(nl(i),collisionNodes)
+                collisionNodes = [collisionNodes ; nl(i)];
+            end
+        end
+    end
+    
+
+while ~isempty(collisionNodes) %Takes away pairs that can't make a feasible path.
     collisionNodes = [];
     for i = 1:length(nl)
         if length(find(nl == nl(i))) > 1
@@ -261,11 +263,27 @@ while isempty(collisionNodes) %Takes away pairs that can't make a feasible path.
         mostExpensiveIndex = sort(routeCost(collidingPairs), 'descend');
         mostExpensiveIndex = find(routeCost == mostExpensiveIndex(1));
         nl(routeIndices == pairToTakeAway) = [];
+        com(pairToTakeAway,:) = [];
         
     else
         [~, pairToTakeAway] = max(nbrOfCollisions);
         nl(routeIndices == pairToTakeAway) = [];
+        com(pairToTakeAway,:) = [];
     end
+    k = k - 1;
     
+    visagrid(dimX,dimY,nl,com,piTemp,shift)
+    drawnow
+    pause(1.5)
+
+    
+    collisionNodes = [];
+    for i = 1:length(nl)
+        if length(find(nl == nl(i))) > 1
+            if ~ismember(nl(i),collisionNodes)
+                collisionNodes = [collisionNodes ; nl(i)];
+            end
+        end
+    end
 end
 
