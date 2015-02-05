@@ -7,37 +7,37 @@ addpath(pwd);
 
 %initialization
 %-------p6.m----------------------------------
-dimX=8;
-dimY=6;
-k=7;
-com = [1 45; 
-       2 43; 
-       3 44; 
-       4 42; 
-       5 46; 
-       6 47; 
-       7 48];
+% dimX=8;
+% dimY=6;
+% k=7;
+% com = [1 45; 
+%        2 43; 
+%        3 44; 
+%        4 42; 
+%        5 46; 
+%        6 47; 
+%        7 48];
 %--------------------------------------------
 
 %------p10.m-------------------------------
-% dimX=30;
-% dimY=10;
-% k=15;
-% com = [24   271; 
-%         8   282; 
-%        21   295; 
-%        25   290; 
-%        15   291; 
-%        27   279; 
-%        30   293; 
-%        26   289;  
-%         2   297;
-%        29   284; 
-%        22   276; 
-%        16   288; 
-%        19   273; 
-%        10   275;  
-%         7   286];
+dimX=30;
+dimY=10;
+k=15;
+com = [24   271; 
+        8   282; 
+       21   295; 
+       25   290; 
+       15   291; 
+       27   279; 
+       30   293; 
+       26   289;  
+        2   297;
+       29   284; 
+       22   276; 
+       16   288; 
+       19   273; 
+       10   275;  
+        7   286];
 %----------------------------------------
 
 %-----------p11.m-----------------------
@@ -63,7 +63,6 @@ com = [1 45;
 %-----------------------------
 
 n = dimX*dimY*2;    %number of nodes
-H = zeros(1,n);
 lambda = 1.99999999;
 lambdaFactor = 0.95;
 startPi = 1/n;
@@ -76,6 +75,8 @@ end
 
 % constants we might want to change
 maxIteration = 400;
+H = zeros(1,maxIteration);
+
 for nIteration = 1:maxIteration
    [nl, okcom, x] = LagrangianSubProblem(dimX, dimY, com, k, pi);    %x is the vector that describes the paths, okcom is the paths that were accepted
    
