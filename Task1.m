@@ -75,16 +75,16 @@ end
 
 % constants we might want to change
 maxIteration = 400;
-H = zeros(1,maxIteration);
+H = zeros(1,maxIteration); %Vector that stores the dualproblem-value at each iteration
 
 for nIteration = 1:maxIteration
    [nl, okcom, x] = LagrangianSubProblem(dimX, dimY, com, k, pi);    %x is the vector that describes the paths, okcom is the paths that were accepted
    
-   h = CalculateSubProblem(x, pi, n, okcom);
+   h = CalculateSubProblem(x, pi, n, okcom); %h is the value of the dual-problem value at this iteration
    
-   d = CalcSubGradient(x, n); %CHECK THIS! THIS MIGHT BE WRONG
+   d = CalcSubGradient(x, n); %d is the subgradient
    
-   s = CalcStepLength(lambda, h, d);
+   s = CalcStepLength(lambda, h, d); %s is the step length
    
    pi = UpdatePi(pi, s, d, n);
    
@@ -94,56 +94,66 @@ for nIteration = 1:maxIteration
    end
    
    H(nIteration) = h;
-   okNbrOfPaths(nIteration) = length(okcom);
+   okNbrOfPaths(nIteration) = length(okcom); %KANSKE TA BORT DENNA, STOG INTE ATT MAN SKULLE HA DEN
+                                             %MEN KANSKE VILL HA BILD I
+                                             %RAPPORT?
    
 end
 
+storlek = 14;
 plot(H)
+title('Dual-problem value', 'FontSize', storlek)
+xlabel('iteration number', 'FontSize', storlek)
+ylabel('value', 'FontSize', storlek)
 figure
 plot(okNbrOfPaths)
+title('Accepted paths - dual subproblem', 'FontSize', storlek)
+xlabel('iteration number', 'FontSize', storlek)
+ylabel('number of accepted paths', 'FontSize', storlek)
 disp(['in the end the dualfunction value is ' num2str(H(end)) ' and the number of accepted paths were ' num2str(okNbrOfPaths(end)) ' of ' num2str(k) ' wanted'])
 
-%% Testing the program. Plotting and such
 shift = 25;
 figure
 visagrid(dimX,dimY,nl,com,pi,shift)
+title('Path of the different pairs with no heuristic', 'FontSize', storlek)
 
 
 %% Heuristic
 
-reallyHighCost = 1e6;
+reallyHighCost = 1e6; %Used to modify the paths that the function gsp chooses.
 
 piTemp = pi;
 piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
 
 % förbered rutternas kostnader med straff för korsning av start och slut
 % noder.
-shift = 25;
-
 [routeIndices, routeCost] = UpdateRouteInfo(k, nl, com, piTemp);
 
-% hitta alla kollisioner
+% hitta alla noder där det sker en kollision
 collisionNodes = FindCollisionNodes(nl);
 
+%Här hittar vi vilka nod-par som använder de noder som det blir en
+%kollision på och väljer att hitta en ny väg för den dyraste av dessa som
+%använder samma noder.
 collisionNodes(ismember(collisionNodes, com)) = [];
 for i = 1:length(collisionNodes)
-    collidingPairs = routeIndices(find(nl == collisionNodes(i)));
-    mostExpensiveIndex = sort(routeCost(collidingPairs), 'descend');
+    collidingPairs = routeIndices(find(nl == collisionNodes(i))); %hittar vilka par som "krockar"
+    mostExpensiveIndex = sort(routeCost(collidingPairs), 'descend'); %tar fram den dyraste av de som krockar
     mostExpensiveIndex = find(routeCost == mostExpensiveIndex(1));
     routeCost(mostExpensiveIndex) = routeCost(mostExpensiveIndex) + reallyHighCost;
 end
 
+%Förklaring på resonemang: alla par som har en kostnad på mer än 3*vår höga
+%kostnad passerar någon "dålig" nod. 2*hög kostnad kommer från varje vägs
+%start- och slut-nod
+pairsToChange = find(routeCost > 3*reallyHighCost);%Tar fram de par som vi vill byta väg på
 
-pairsToChange = find(routeCost > 3*reallyHighCost);
 
 iIteration =1;
-quitCriteria = 50;
+quitCriteria = 50; %om vi inte har lyckats "trassla ut" alla vägar avbryts den efter 50st. byten
 while ~isempty(pairsToChange)
         
-    [sortedCosts, sortedRoutes] = sort(routeCost(pairsToChange),'descend');
-    routeCost
-    pairsToChange
-    sortedRoutes
+    [sortedCosts, sortedRoutes] = sort(routeCost(pairsToChange),'descend'); %Börjar hitta ny väg på den dyraste vägen
     
     % klura ut vilken rutt vi ska ändra på
     collidingRoutes = routeIndices( ismember(nl, collisionNodes) );
@@ -151,7 +161,8 @@ while ~isempty(pairsToChange)
     
     changeRoute = pairsToChange(sortedRoutes(1));
     
-    % här borde man kika på start/slut-nodsproblemet
+    % här borde man kika på start/slut-nodsproblemet DETTA SKA VÄL INTE
+    % VARA MED?????? KOMENTAREN ALLTSÅ
     insertionIndex = find(routeIndices == changeRoute);
     nl(insertionIndex) = [];
     
@@ -245,3 +256,4 @@ while ~isempty(collisionNodes) %Takes away pairs that can't make a feasible path
     
     collisionNodes = FindCollisionNodes(nl);
 end
+title('Path of the different pairs after the heuristic', 'FontSize', storlek)
