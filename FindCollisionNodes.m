@@ -1,6 +1,6 @@
 function [ collisionNodes ] = FindCollisionNodes( nl )
-%FINDCOLLISIONNODES Summary of this function goes here
-%   Detailed explanation goes here
+% Lists all nodes that occur more than once in the node list.
+% The list contains only unique entries
 
 collisionNodes = [];
     for i = 1:length(nl)
