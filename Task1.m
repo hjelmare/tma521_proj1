@@ -213,8 +213,8 @@ while ~isempty(pairsToChange)
     end
     
     if(iIteration == quitCriteria)
-        disp(['den hann inte reda ut allt, vi avbröt while-loopen. \n quitCriteria = ' num2str(quitCriteria) ])
-        pairsToChange = [];
+        disp(['Iteration limit reached, aborting loop. quitCriteria = ' num2str(quitCriteria) ])
+        pairsToChange = [];  % causes the while-loop to finish
     end
     iIteration = iIteration + 1;
 end
@@ -224,28 +224,24 @@ collisionNodes = FindCollisionNodes(nl);
 
 while ~isempty(collisionNodes) %Takes away pairs that can't make a feasible path.
     
-    collisionNodes = FindCollisionNodes(nl);
-    
     for i = 1:length(collisionNodes)
         collidingPairs = [collidingPairs; routeIndices(find(nl == collisionNodes(i)))];
     end
     
-    nbrOfCollisions = zeros(1,k);
+    nCollisions = zeros(1,k);
     for i = 1:k
-        nbrOfCollisions(i) = length(find(collidingPairs == i));
+        nCollisions(i) = length(find(collidingPairs == i));
     end
     
-    if sum(nbrOfCollisions == max(nbrOfCollisions)) > 1
-        [~, pairToTakeAway] = max(nbrOfCollisions);
+    mostCollisions = max(nCollisions);
+    pairToTakeAway = find(nCollisions == mostCollisions);
+    if sum(nCollisions == mostCollisions) > 1
         mostExpensiveIndex = sort(routeCost(collidingPairs), 'descend');
         mostExpensiveIndex = find(routeCost == mostExpensiveIndex(1));
-        nl(routeIndices == pairToTakeAway) = [];
-        com(pairToTakeAway,:) = [];
-    else
-        [~, pairToTakeAway] = max(nbrOfCollisions);
-        nl(routeIndices == pairToTakeAway) = [];
-        com(pairToTakeAway,:) = [];
+        pairToTakeAway = mostExpensiveIndex;
     end
+    nl(routeIndices == pairToTakeAway) = [];
+    com(pairToTakeAway,:) = [];
     k = k - 1;
     
     routeIndices = UpdateRouteInfo(k, nl, com, piTemp);
@@ -257,3 +253,4 @@ while ~isempty(collisionNodes) %Takes away pairs that can't make a feasible path
     collisionNodes = FindCollisionNodes(nl);
 end
 title('Path of the different pairs after the heuristic', 'FontSize', storlek)
+disp('Done!')
