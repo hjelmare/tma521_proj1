@@ -5,96 +5,44 @@ clc
 close all
 addpath(pwd);
 
-%initialization
-%-------p6.m----------------------------------
-dimX=8;
-dimY=6;
-k=7;
-com = [1 45; 
-       2 43; 
-       3 44; 
-       4 42; 
-       5 46; 
-       6 47; 
-       7 48];
-%--------------------------------------------
+% Select which problem you want to try and solve
+ p6
+% p10
+% p11
 
-%------p10.m-------------------------------
-% dimX=30;
-% dimY=10;
-% k=15;
-% com = [24   271; 
-%         8   282; 
-%        21   295; 
-%        25   290; 
-%        15   291; 
-%        27   279; 
-%        30   293; 
-%        26   289;  
-%         2   297;
-%        29   284; 
-%        22   276; 
-%        16   288; 
-%        19   273; 
-%        10   275;  
-%         7   286];
-%----------------------------------------
+n = dimX*dimY*2;    % Number of nodes
 
-%-----------p11.m-----------------------
-% dimX=30;
-% dimY=11;
-% k=15;
-% 
-% com = [24   301; 
-%         8   312; 
-%        21   325; 
-%        25   320; 
-%        15   321; 
-%        27   309; 
-%        30   323; 
-%        26   319;  
-%         2   327;
-%        29   314; 
-%        22   306; 
-%        16   318; 
-%        19   303; 
-%        10   305;  
-%         7   316];
-%-----------------------------
-
-n = dimX*dimY*2;    %number of nodes
+% Some settings that one might want to change
+maxIterations = 1000;
 lambda = 1.99999999;
-lambdaFactor = 0.95;
-startPi = 1/n;
+lambdaFactor = 0.95;    % Reduces lambda ...
+lambdaIterations = 10;  % ... every x iterations
+startPi = 1/n;          % Initial value for pi (the cost)
 
+% Just preparing things for later
+pi = startPi*ones(n,1);
+H = zeros(1,maxIterations); % Dual value at each iteration (for plotting)
+nPaths = zeros(1,maxIterations); % Number of accepted paths ---||---
 
-pi=zeros(n, 1);
-for i=1:n
-    pi(i)=startPi;
-end
-
-% constants we might want to change
-maxIteration = 400;
-H = zeros(1,maxIteration); %Vector that stores the dualproblem-value at each iteration
-
-for nIteration = 1:maxIteration
-   [nl, okcom, x] = LagrangianSubProblem(dimX, dimY, com, k, pi);    %x is the vector that describes the paths, okcom is the paths that were accepted
+for nIteration = 1:maxIterations
+    % x is the vector that describes the paths, okcom is the paths that were accepted
+    [nl, okcom, x] = LagrangianSubProblem(dimX, dimY, com, k, pi);
+    % h is the value of the dual-problem value at this iteration
+    h = CalculateSubProblem(x, pi, n, okcom); 
    
-   h = CalculateSubProblem(x, pi, n, okcom); %h is the value of the dual-problem value at this iteration
+    d = CalcSubGradient(x, n); %d is the subgradient
    
-   d = CalcSubGradient(x, n); %d is the subgradient
+    s = CalcStepLength(lambda, h, d); %s is the step length
    
-   s = CalcStepLength(lambda, h, d); %s is the step length
+    pi = UpdatePi(pi, s, d, n);
    
-   pi = UpdatePi(pi, s, d, n);
+    %updates lambda
+    if mod(nIteration, lambdaIterations) == 0
+        lambda = lambda*lambdaFactor;
+    end
    
-   %updates lambda
-   if mod(nIteration, 1) == 0
-       lambda = lambda*lambdaFactor;
-   end
-   
-   H(nIteration) = h;
-   okNbrOfPaths(nIteration) = length(okcom); %KANSKE TA BORT DENNA, STOG INTE ATT MAN SKULLE HA DEN
+    H(nIteration) = h;
+    nPaths(nIteration) = length(okcom); %KANSKE TA BORT DENNA, STOG INTE ATT MAN SKULLE HA DEN
                                              %MEN KANSKE VILL HA BILD I
                                              %RAPPORT?
    
@@ -106,11 +54,12 @@ title('Dual-problem value', 'FontSize', storlek)
 xlabel('iteration number', 'FontSize', storlek)
 ylabel('value', 'FontSize', storlek)
 figure
-plot(okNbrOfPaths)
+plot(nPaths)
 title('Accepted paths - dual subproblem', 'FontSize', storlek)
 xlabel('iteration number', 'FontSize', storlek)
 ylabel('number of accepted paths', 'FontSize', storlek)
-disp(['in the end the dualfunction value is ' num2str(H(end)) ' and the number of accepted paths were ' num2str(okNbrOfPaths(end)) ' of ' num2str(k) ' wanted'])
+disp(['Final value of dual function is ' num2str(H(end)) ])
+disp([num2str(nPaths(end)) ' out of ' num2str(k) ' desired paths were accepted'])
 
 shift = 25;
 figure
@@ -120,16 +69,16 @@ title('Path of the different pairs with no heuristic', 'FontSize', storlek)
 
 %% Heuristic
 
-reallyHighCost = 1e6; %Used to modify the paths that the function gsp chooses.
+reallyHighCost = 1e6; % Penalty used to "block" nodes that are already used
 
-piTemp = pi;
-piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
+%piTemp = pi;
+piTemp = (1/n)*ones(n,1);
+piTemp(com) = reallyHighCost; % Block start and end nodes
 
-% förbered rutternas kostnader med straff för korsning av start och slut
-% noder.
+% Calculate costs, and figure out which parts of nl belong to which pair
 [routeIndices, routeCost] = UpdateRouteInfo(k, nl, com, piTemp);
 
-% hitta alla noder där det sker en kollision
+% Find all nodes that have more than one route passing through
 collisionNodes = FindCollisionNodes(nl);
 
 %Här hittar vi vilka nod-par som använder de noder som det blir en
@@ -178,7 +127,6 @@ while ~isempty(pairsToChange)
     pause(0.2)
 
 %----------------------Calculating cost-----------------------------
-    % beräknar rutternas kostnader och så...    
     piTemp = pi;
     piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
     last = 0;
@@ -220,12 +168,16 @@ while ~isempty(pairsToChange)
     end
     iIteration = iIteration + 1;
 end
+
+disp('Done!')
+
 %% Take away paths untill feasible solution
    
 collisionNodes = FindCollisionNodes(nl);
 
 while ~isempty(collisionNodes) %Takes away pairs that can't make a feasible path.
     
+    collidingPairs = [];
     for i = 1:length(collisionNodes)
         collidingPairs = [collidingPairs; routeIndices(find(nl == collisionNodes(i)))];
     end
