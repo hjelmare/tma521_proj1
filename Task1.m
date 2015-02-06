@@ -161,13 +161,15 @@ while ~isempty(pairsToChange)
     
     changeRoute = pairsToChange(sortedRoutes(1));
     
-    % här borde man kika på start/slut-nodsproblemet DETTA SKA VÄL INTE
-    % VARA MED?????? KOMENTAREN ALLTSÅ
+    %Takes away the path we want to change from nl
     insertionIndex = find(routeIndices == changeRoute);
     nl(insertionIndex) = [];
     
+    %Sets all nodes that are occupied to high cost in order for gsp to not
+    %use those nodes.
     piTemp(nl) = reallyHighCost;
     
+    %Calculate new path for the pair we are changing path to.
     newRoute = gsp(dimX, dimY, piTemp, 1, com(changeRoute,:) );
     nl = [nl(1:insertionIndex(1)-1); newRoute; nl(insertionIndex(1):end)];
     
@@ -181,7 +183,7 @@ while ~isempty(pairsToChange)
     piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
     last = 0;
     routeIndices=zeros(length(nl),1);
-    oldRouteCost = routeCost;
+    oldRouteCost = routeCost; %This variable is used to check if we couldn't find any new path when choosing the most expensive one att a collision we choose to change the cheaper one.
     for i = 1 : k;
         first = last+1;
         slask = find(nl(last+1:length(nl)) == com(i,1));
@@ -218,7 +220,7 @@ while ~isempty(pairsToChange)
     end
     iIteration = iIteration + 1;
 end
-%% EJ KLAR - STÄMMER LOOPEN?
+%% Take away paths untill feasible solution
    
 collisionNodes = FindCollisionNodes(nl);
 
