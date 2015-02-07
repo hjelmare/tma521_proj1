@@ -65,7 +65,7 @@ title('Path of the different pairs with no heuristic', 'FontSize', storlek)
 %% Heuristic
 
 % Settings
-maxIterations = 50; % Max nr of attempts at fixing collisions
+maxIterations = 50; % Max nr of attempts at rerouteing colliding routes
 
 % And here we go...
 reallyHighCost = 1e6; % Penalty used to "block" nodes that are already used
@@ -100,23 +100,19 @@ iIteration =1;
 while ~isempty(pairsToChange)   % Stop when there are no more collisions
     % Start looking for the worst route (most collisions, highest cost)
     [sortedCosts, sortedRoutes] = sort(routeCost(pairsToChange),'descend');
-    
-    % klura ut vilken rutt vi ska ändra på
-    %collidingRoutes = routeIndices( ismember(nl, collisionNodes) );
-    %collidingRoutes = unique( collidingRoutes );
-    
     changeRoute = pairsToChange(sortedRoutes(1));
     
-    %Takes away the path we want to change from nl
+    % Take away the path we want to change from nl
     insertionIndex = find(routeIndices == changeRoute);
     nl(insertionIndex) = [];
     
-    %Sets all nodes that are occupied to high cost in order for gsp to not
-    %use those nodes.
+    % Sets all nodes that are occupied to high cost in order for gsp to not
+    % use those nodes.
     piTemp(nl) = reallyHighCost;
     
-    %Calculate new path for the pair we are changing path to.
+    % Calculate new path for the route we are changing
     newRoute = gsp(dimX, dimY, piTemp, 1, com(changeRoute,:) );
+    % and insert it in the node list
     nl = [nl(1:insertionIndex(1)-1); newRoute; nl(insertionIndex(1):end)];
     
     visagrid(dimX,dimY,nl,com,piTemp,shift)
@@ -146,7 +142,7 @@ while ~isempty(pairsToChange)   % Stop when there are no more collisions
         routeCost(mostExpensiveRoute) = routeCost(mostExpensiveRoute) + reallyHighCost;
     end
  %--------------------------------------------------------------
-% temporary shit for
+% temporary stuff for
 % debugging!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     pairsToChange
     changeRoute
