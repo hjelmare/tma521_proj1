@@ -15,18 +15,18 @@ for i = 1 : k;
     last = slask(1)+first-1;
 %    disp(['summa ' num2str(i) '=' num2str(sum( pi( nl(first:last)))) ])
     if (sum(pi(nl(first:last))) < 1)
-    okcom = [okcom i];
-    newnl = [newnl; nl(first:last)];
-    
-    %Creates the matrix x_{ijl}
-    %--------------------------------
-    for j = 0:length(nl(first:last))-2
-        from = nl(first+j);
-        to = nl(first+j+1);
-        x(from, to, i) = 1;
-    end
-    %--------------------------------
-    
+        okcom = [okcom i];
+        newnl = [newnl; nl(first:last)];
+        
+        %Creates the matrix x_{ijl}
+        %--------------------------------
+        for j = 0:length(nl(first:last))-2
+            from = nl(first+j);
+            to = nl(first+j+1);
+            x(from, to, i) = 1;
+        end
+        %--------------------------------
+        
     end
 end
 
