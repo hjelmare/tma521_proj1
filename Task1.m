@@ -6,7 +6,7 @@ close all
 addpath(pwd);
 
 % Select which problem you want to try and solve
- p6
+  p6
 % p10
 % p11
 
@@ -69,7 +69,7 @@ maxIterations = 50; % Max nr of attempts at fixing collisions
 
 % And here we go...
 reallyHighCost = 1e6; % Penalty used to "block" nodes that are already used
-pi = (1/n)*ones(n,1);   % Perhaps we should be using the old one??
+pi = (1/n)*ones(n,1);
 piTemp = pi;
 piTemp(com) = reallyHighCost; % Block start and end nodes
 
@@ -95,7 +95,9 @@ end
 % of being the more expensive route involved in a collision, so anything
 % with 3x penalty probably needs to be changed
 pairsToChange = find(routeCost > 3*reallyHighCost);
+oldNl = nl; %used to check if something has changed in the while-loop.
 
+sameRoutes = 0;
 iIteration =1;
 while ~isempty(pairsToChange)   % Stop when there are no more collisions
     % Start looking for the worst route (most collisions, highest cost)
@@ -123,39 +125,57 @@ while ~isempty(pairsToChange)   % Stop when there are no more collisions
     drawnow
     pause(0.2)
 
-%----------------------Calculating cost-----------------------------
+%   Update pi after the new route.
     piTemp = pi;
     piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
     
     oldRouteCost = routeCost; %This variable is used to check if we couldn't find any new path when choosing the most expensive one att a collision we choose to change the cheaper one.
     
-    [routeIndices, routeCost] = UpdateRouteInfo(k,nl,com,piTemp);
-    
     % hitta alla kollisioner
     collisionNodes = FindCollisionNodes(nl);
     
     collisionNodes(ismember(collisionNodes, com)) = [];
+    
+    [routeIndices, routeCost] = UpdateRouteInfo(k,nl,com,piTemp);
+    
+    %Caclulate cost again
     for i = 1:length(collisionNodes)
         collidingRoutes = routeIndices(find(nl == collisionNodes(i)));
-        if oldRouteCost == routeCost
+        sameRoutes
+        if sameRoutes
             mostExpensiveRoute = sort(routeCost(collidingRoutes));
+            disp('cheapest')
         else
             mostExpensiveRoute = sort(routeCost(collidingRoutes),'descend');
+            disp('expensive')
         end
         mostExpensiveRoute = find(routeCost == mostExpensiveRoute(1));
         routeCost(mostExpensiveRoute) = routeCost(mostExpensiveRoute) + reallyHighCost;
     end
+
  %--------------------------------------------------------------
 % temporary shit for
 % debugging!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     pairsToChange
+    %sortedRoutes
     changeRoute
 
  
     pairsToChange(pairsToChange == changeRoute) = []; % tar bort den rutten som vi nyss ändrat
     
     if isempty(pairsToChange)
-       pairsToChange = find(routeCost > 3*reallyHighCost);
+        %Create a new vector with pairs we want to change
+        pairsToChange = find(routeCost > 3*reallyHighCost);
+        if size(nl) == size(oldNl)
+            if (oldNl == nl)
+                sameRoutes = 1;
+            else
+                sameRoutes = 0;
+            end
+        else
+            sameRoutes = 0;
+        end
+        oldNl = nl;
     end
     
     if(iIteration == maxIterations)
