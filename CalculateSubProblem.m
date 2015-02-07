@@ -1,5 +1,9 @@
 function [ h ] = CalculateSubProblem(x, pi, n, okcom)
 %Calculates the value of the subproblem given the optimized paths
+% h is the value of the subproblem.
+% x describes the path that circuits passes.
+% okcom hold what pairs that we have found an accepted path between.
+% n is the number of nodes on the circuitboard.
 nbrOfAcceptedPaths = length(okcom);
 
 h = sum(pi);
