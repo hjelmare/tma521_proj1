@@ -1,5 +1,4 @@
-
-% Just preparing things for later
+% Initial setup of some stuff
 pi = startPi*ones(n,1);
 H = zeros(1,maxIterations); % Dual value at each iteration (for plotting)
 nPaths = zeros(1,maxIterations); % Number of accepted paths ---||---
@@ -23,8 +22,8 @@ for nIteration = 1:maxIterations
         hOld = h;
         nLambda = 0;
     end
-    if nLambda == lambdaIterations
-        lambda = lambda * 0.5;
+    if nLambda == lambdaIterations  % If no improvement for x iterations
+        lambda = lambda * 0.5;      
         nLambda = 0;
     end
     nLambda = nLambda + 1;
@@ -32,6 +31,7 @@ for nIteration = 1:maxIterations
     H(nIteration) = h;
 end
 
+% Plot stuff
 storlek = 14;
 plot(H)
 title('Dual-problem value', 'FontSize', storlek)

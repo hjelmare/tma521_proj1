@@ -3,6 +3,6 @@
 
 % Settings
 maxIterations = 50; % Max nr of attempts at rerouting colliding routes
-viewTime = 0.5; % Time between plot updates (set to zero for max speed)
+viewTime = 0.2; % Time between plot updates (set to zero for max speed)
 
 SolveTask2

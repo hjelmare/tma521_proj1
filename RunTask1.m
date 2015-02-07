@@ -4,9 +4,9 @@ close all
 addpath(pwd);
 
 % Select which problem you want to try and solve
-  p6
+%  p6
 % p10
-% p11
+ p11
 
 n = dimX*dimY*2;    % Number of nodes
 
