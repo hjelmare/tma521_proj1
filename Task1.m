@@ -53,11 +53,6 @@ plot(H)
 title('Dual-problem value', 'FontSize', storlek)
 xlabel('iteration number', 'FontSize', storlek)
 ylabel('value', 'FontSize', storlek)
-figure
-plot(nPaths)
-title('Accepted paths - dual subproblem', 'FontSize', storlek)
-xlabel('iteration number', 'FontSize', storlek)
-ylabel('number of accepted paths', 'FontSize', storlek)
 disp(['Final value of dual function is ' num2str(H(end)) ])
 disp([num2str(nPaths(end)) ' out of ' num2str(k) ' desired paths were accepted'])
 
@@ -69,44 +64,46 @@ title('Path of the different pairs with no heuristic', 'FontSize', storlek)
 
 %% Heuristic
 
-reallyHighCost = 1e6; % Penalty used to "block" nodes that are already used
+% Settings
+maxIterations = 50; % Max nr of attempts at fixing collisions
 
-%piTemp = pi;
-piTemp = (1/n)*ones(n,1);
+% And here we go...
+reallyHighCost = 1e6; % Penalty used to "block" nodes that are already used
+pi = (1/n)*ones(n,1);   % Perhaps we should be using the old one??
+piTemp = pi;
 piTemp(com) = reallyHighCost; % Block start and end nodes
 
-% Calculate costs, and figure out which parts of nl belong to which pair
+% Calculate route costs, figure out which parts of nl belong to which pair
 [routeIndices, routeCost] = UpdateRouteInfo(k, nl, com, piTemp);
+% (using piTemp means that all routes get 2x penalty for start/end nodes)
 
+% Next, we want to penalize routes involved in collisions
 % Find all nodes that have more than one route passing through
 collisionNodes = FindCollisionNodes(nl);
-
-%Här hittar vi vilka nod-par som använder de noder som det blir en
-%kollision på och väljer att hitta en ny väg för den dyraste av dessa som
-%använder samma noder.
-collisionNodes(ismember(collisionNodes, com)) = [];
+collisionNodes(ismember(collisionNodes,com)) = []; % Ignore start/end nodes
 for i = 1:length(collisionNodes)
-    collidingPairs = routeIndices(find(nl == collisionNodes(i))); %hittar vilka par som "krockar"
-    mostExpensiveIndex = sort(routeCost(collidingPairs), 'descend'); %tar fram den dyraste av de som krockar
-    mostExpensiveIndex = find(routeCost == mostExpensiveIndex(1));
-    routeCost(mostExpensiveIndex) = routeCost(mostExpensiveIndex) + reallyHighCost;
+     % Identify which routes are involved
+    collidingRoutes = routeIndices(find(nl == collisionNodes(i)));
+    % then find the most expensive one
+    mostExpensiveRoute = sort(routeCost(collidingRoutes), 'descend');
+    mostExpensiveRoute = find(routeCost == mostExpensiveRoute(1));
+    % and put a penalty on it
+    routeCost(mostExpensiveRoute) = routeCost(mostExpensiveRoute) + reallyHighCost;
 end
 
-%Förklaring på resonemang: alla par som har en kostnad på mer än 3*vår höga
-%kostnad passerar någon "dålig" nod. 2*hög kostnad kommer från varje vägs
-%start- och slut-nod
-pairsToChange = find(routeCost > 3*reallyHighCost);%Tar fram de par som vi vill byta väg på
-
+% Every route has 2x penalty from start/end nodes, but 3x penalty is a sign
+% of being the more expensive route involved in a collision, so anything
+% with 3x penalty probably needs to be changed
+pairsToChange = find(routeCost > 3*reallyHighCost);
 
 iIteration =1;
-quitCriteria = 50; %om vi inte har lyckats "trassla ut" alla vägar avbryts den efter 50st. byten
-while ~isempty(pairsToChange)
-        
-    [sortedCosts, sortedRoutes] = sort(routeCost(pairsToChange),'descend'); %Börjar hitta ny väg på den dyraste vägen
+while ~isempty(pairsToChange)   % Stop when there are no more collisions
+    % Start looking for the worst route (most collisions, highest cost)
+    [sortedCosts, sortedRoutes] = sort(routeCost(pairsToChange),'descend');
     
     % klura ut vilken rutt vi ska ändra på
-    collidingRoutes = routeIndices( ismember(nl, collisionNodes) );
-    collidingRoutes = unique( collidingRoutes );
+    %collidingRoutes = routeIndices( ismember(nl, collisionNodes) );
+    %collidingRoutes = unique( collidingRoutes );
     
     changeRoute = pairsToChange(sortedRoutes(1));
     
@@ -129,41 +126,40 @@ while ~isempty(pairsToChange)
 %----------------------Calculating cost-----------------------------
     piTemp = pi;
     piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
-    last = 0;
-    routeIndices=zeros(length(nl),1);
+    
     oldRouteCost = routeCost; %This variable is used to check if we couldn't find any new path when choosing the most expensive one att a collision we choose to change the cheaper one.
-    for i = 1 : k;
-        first = last+1;
-        slask = find(nl(last+1:length(nl)) == com(i,1));
-        last = slask(1)+first-1;
-        routeCost(i) =  sum(piTemp(nl(first:last)));
-        routeIndices(first:last,1) = i;
-    end
+    
+    [routeIndices, routeCost] = UpdateRouteInfo(k,nl,com,piTemp);
     
     % hitta alla kollisioner
     collisionNodes = FindCollisionNodes(nl);
     
     collisionNodes(ismember(collisionNodes, com)) = [];
     for i = 1:length(collisionNodes)
-        collidingPairs = routeIndices(find(nl == collisionNodes(i)));
+        collidingRoutes = routeIndices(find(nl == collisionNodes(i)));
         if oldRouteCost == routeCost
-            mostExpensiveIndex = sort(routeCost(collidingPairs));
+            mostExpensiveRoute = sort(routeCost(collidingRoutes));
         else
-            mostExpensiveIndex = sort(routeCost(collidingPairs),'descend');
+            mostExpensiveRoute = sort(routeCost(collidingRoutes),'descend');
         end
-        mostExpensiveIndex = find(routeCost == mostExpensiveIndex(1));
-        routeCost(mostExpensiveIndex) = routeCost(mostExpensiveIndex) + reallyHighCost;
+        mostExpensiveRoute = find(routeCost == mostExpensiveRoute(1));
+        routeCost(mostExpensiveRoute) = routeCost(mostExpensiveRoute) + reallyHighCost;
     end
  %--------------------------------------------------------------
-    
-    pairsToChange = pairsToChange(2:end); % tar bort den rutten som vi nyss ändrat
+% temporary shit for
+% debugging!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    pairsToChange
+    changeRoute
+
+ 
+    pairsToChange(pairsToChange == changeRoute) = []; % tar bort den rutten som vi nyss ändrat
     
     if isempty(pairsToChange)
        pairsToChange = find(routeCost > 3*reallyHighCost);
     end
     
-    if(iIteration == quitCriteria)
-        disp(['Iteration limit reached, aborting loop. quitCriteria = ' num2str(quitCriteria) ])
+    if(iIteration == maxIterations)
+        disp(['Iteration limit reached, aborting loop. quitCriteria = ' num2str(maxIterations) ])
         pairsToChange = [];  % causes the while-loop to finish
     end
     iIteration = iIteration + 1;
@@ -171,28 +167,28 @@ end
 
 disp('Done!')
 
-%% Take away paths untill feasible solution
+%% Take away paths until solution is feasible
    
 collisionNodes = FindCollisionNodes(nl);
 
-while ~isempty(collisionNodes) %Takes away pairs that can't make a feasible path.
+while ~isempty(collisionNodes)
     
-    collidingPairs = [];
+    collidingRoutes = [];
     for i = 1:length(collisionNodes)
-        collidingPairs = [collidingPairs; routeIndices(find(nl == collisionNodes(i)))];
+        collidingRoutes = [collidingRoutes; routeIndices(find(nl == collisionNodes(i)))];
     end
     
     nCollisions = zeros(1,k);
     for i = 1:k
-        nCollisions(i) = length(find(collidingPairs == i));
+        nCollisions(i) = length(find(collidingRoutes == i));
     end
     
     mostCollisions = max(nCollisions);
     pairToTakeAway = find(nCollisions == mostCollisions);
     if sum(nCollisions == mostCollisions) > 1
-        mostExpensiveIndex = sort(routeCost(collidingPairs), 'descend');
-        mostExpensiveIndex = find(routeCost == mostExpensiveIndex(1));
-        pairToTakeAway = mostExpensiveIndex;
+        mostExpensiveRoute = sort(routeCost(collidingRoutes), 'descend');
+        mostExpensiveRoute = find(routeCost == mostExpensiveRoute(1));
+        pairToTakeAway = mostExpensiveRoute;
     end
     nl(routeIndices == pairToTakeAway) = [];
     com(pairToTakeAway,:) = [];
