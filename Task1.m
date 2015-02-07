@@ -15,8 +15,7 @@ n = dimX*dimY*2;    % Number of nodes
 % Some settings that one might want to change
 maxIterations = 1000;
 lambda = 1.99999999;
-lambdaFactor = 0.95;    % Reduces lambda ...
-lambdaIterations = 10;  % ... every x iterations
+lambdaIterations = 15;
 startPi = 1/n;          % Initial value for pi (the cost)
 
 % Just preparing things for later
@@ -24,22 +23,33 @@ pi = startPi*ones(n,1);
 H = zeros(1,maxIterations); % Dual value at each iteration (for plotting)
 nPaths = zeros(1,maxIterations); % Number of accepted paths ---||---
 
+nLambda = 0;
+hOld=inf;
 for nIteration = 1:maxIterations
     % x is the vector that describes the paths, okcom is the paths that were accepted
     [nl, okcom, x] = LagrangianSubProblem(dimX, dimY, com, k, pi);
     % h is the value of the dual-problem value at this iteration
-    h = CalculateSubProblem(x, pi, n, okcom); 
+    h = CalculateSubProblem(pi, okcom, nl); 
    
-    d = CalcSubGradient(x, n); %d is the subgradient
+    d = CalcSubGradient(x, n, k); %d is the subgradient
    
     s = CalcStepLength(lambda, h, d); %s is the step length
    
     pi = UpdatePi(pi, s, d, n);
    
     %updates lambda
-    if mod(nIteration, lambdaIterations) == 0
-        lambda = lambda*lambdaFactor;
+%     if mod(nIteration, lambdaIterations) == 0
+%         lambda = lambda*lambdaFactor;
+%     end
+    if hOld > h
+        hOld = h;
+        nLambda = 0;
     end
+    if nLambda == lambdaIterations
+        lambda = lambda * 0.5;
+        nLambda = 0;
+    end
+    nLambda = nLambda + 1;
    
     H(nIteration) = h;
     nPaths(nIteration) = length(okcom); %KANSKE TA BORT DENNA, STOG INTE ATT MAN SKULLE HA DEN
