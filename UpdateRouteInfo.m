@@ -7,10 +7,14 @@ last = 0;
 for i = 1 : k;
     first = last+1;
     slask = find(nl(last+1:length(nl)) == com(i,1));
-    last = slask(1)+first-1;
-
-    routeCost(i) =  sum(cost(nl(first:last)));
-    routeIndices(first:last,1) = i;
+    if ~isempty(slask)
+        last = slask(1)+first-1;
+        
+        routeCost(i) =  sum(cost(nl(first:last)));
+        routeIndices(first:last,1) = i;
+    else
+        routeCost(i) = 0;
+    end
 end
 
 end

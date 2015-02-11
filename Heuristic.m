@@ -1,10 +1,11 @@
-%% Heuristic
-figure
-% And here we go...
+function [ primalValue ] = Heuristic( nl, com, dimX, dimY)
+n = 2*dimX*dimY;
+k = size(com,1);
 reallyHighCost = 1e6; % Penalty used to "block" nodes that are already used
 pi = (1/n)*ones(n,1);
 piTemp = pi;
 piTemp(com) = reallyHighCost; % Block start and end nodes
+maxIterations = 50;
 
 % Calculate route costs, figure out which parts of nl belong to which pair
 [routeIndices, routeCost] = UpdateRouteInfo(k, nl, com, piTemp);
@@ -14,6 +15,7 @@ piTemp(com) = reallyHighCost; % Block start and end nodes
 % Find all nodes that have more than one route passing through
 collisionNodes = FindCollisionNodes(nl);
 collisionNodes(ismember(collisionNodes,com)) = []; % Ignore start/end nodes
+
 for i = 1:length(collisionNodes)
      % Identify which routes are involved
     collidingRoutes = routeIndices(find(nl == collisionNodes(i)));
@@ -23,6 +25,7 @@ for i = 1:length(collisionNodes)
     % and put a penalty on it
     routeCost(mostExpensiveRoute) = routeCost(mostExpensiveRoute) + reallyHighCost;
 end
+
 
 % Every route has 2x penalty from start/end nodes, but 3x penalty is a sign
 % of being the more expensive route involved in a collision, so anything
@@ -49,16 +52,12 @@ while ~isempty(routesToChange)   % Stop when there are no more collisions
     newRoute = gsp(dimX, dimY, piTemp, 1, com(changeRoute,:) );
     % and insert it in the node list
     nl = [nl(1:insertionIndex(1)-1); newRoute; nl(insertionIndex(1):end)];
-    
-    visagrid(dimX,dimY,nl,com,piTemp,shift)
-    drawnow
-    pause(viewTime)
 
 %   Update pi after the new route.
     piTemp = pi;
     piTemp(com) = reallyHighCost; %to prevent paths to be taken over start/end nodes
     
-    oldRouteCost = routeCost; %This variable is used to check if we couldn't find any new path when choosing the most expensive one att a collision we choose to change the cheaper one.
+%    oldRouteCost = routeCost; %This variable is used to check if we couldn't find any new path when choosing the most expensive one att a collision we choose to change the cheaper one.
     
     % Find nodes with collisions on them
     collisionNodes = FindCollisionNodes(nl);
@@ -83,7 +82,7 @@ while ~isempty(routesToChange)   % Stop when there are no more collisions
 
     % Remove the route we just changed from the list of routes to change
     routesToChange(routesToChange == changeRoute) = [];
-    
+
     if isempty(routesToChange)
         %Create a new vector with pairs we want to change
         routesToChange = find(routeCost > 3*reallyHighCost);
@@ -100,13 +99,11 @@ while ~isempty(routesToChange)   % Stop when there are no more collisions
     end
     
     if(iIteration == maxIterations)
-        disp(['Iteration limit reached, aborting loop. maxIterations = ' num2str(maxIterations) ])
         routesToChange = [];  % causes the while-loop to finish
     end
     iIteration = iIteration + 1;
 end
 
-disp('Untangling done!')
 
 %% Take away paths until solution is feasible
    
@@ -134,17 +131,12 @@ while ~isempty(collisionNodes)
     nl(routeIndices == pairToTakeAway(1)) = [];
     com(pairToTakeAway(1),:) = [];
     k = k - 1;
-    
+
     routeIndices = UpdateRouteInfo(k, nl, com, piTemp);
-    
-    visagrid(dimX,dimY,nl,com,piTemp,shift)
-    drawnow
-    pause(viewTime)
     
     collisionNodes = FindCollisionNodes(nl);
 end
+primalValue = length(unique(routeIndices));
 
-% Change title of plot
-title('Path of the different pairs after the heuristic', 'FontSize', storlek)
+end
 
-disp('Feasibility done!')
